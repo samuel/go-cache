@@ -4,8 +4,8 @@ import (
 	"testing"
 )
 
-func TestLRUCacheBasics(t *testing.T) {
-	cache := NewLRUCache(2)
+func TestLFUCacheBasics(t *testing.T) {
+	cache := NewLFUCache(2)
 	if cache == nil {
 		t.Fatal("Cache is nil")
 	}
@@ -13,8 +13,8 @@ func TestLRUCacheBasics(t *testing.T) {
 	BasicCacheTest(t, cache)
 }
 
-func TestLRUCacheExpiration(t *testing.T) {
-	cache := NewLRUCache(2)
+func TestLFUCacheExpiration(t *testing.T) {
+	cache := NewLFUCache(2)
 	if cache == nil {
 		t.Fatal("Cache is nil")
 	}
@@ -26,18 +26,18 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
-		t.Fatal("index or lry length should be 2")
+	if len(cache.index) != 2 {
+		t.Fatal("index length should be 2")
 	}
 
-	// Make sure set updates lru
+	// Make sure set updates lfu
 
 	if err := cache.Set("key3", "v3"); err != nil {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
-		t.Fatal("index or lry length should be 2")
+	if len(cache.index) != 2 {
+		t.Fatalf("index length should be 2 instead of %d", len(cache.index))
 	}
 
 	if val, err := cache.Get("key1"); err != nil {
@@ -46,7 +46,7 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("didn't expire key1")
 	}
 
-	// Make sure get updates lru
+	// Make sure get updates lfu
 
 	if val, err := cache.Get("key2"); err != nil {
 		t.Fatal("cache.Get for existing key returned err")
@@ -58,7 +58,7 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
+	if len(cache.index) != 2 {
 		t.Fatal("index or lry length should be 2")
 	}
 
