@@ -8,6 +8,7 @@ type LRUCache struct {
 	maxItems int
 	lru      *list.List
 	index    map[string]*list.Element
+	evictionHook func (string, interface{})
 }
 
 type keyValue struct {
@@ -24,6 +25,10 @@ func NewLRUCache(maxItems int) *LRUCache {
 	return cache
 }
 
+func (c *LRUCache) SetEvictionHook(hook func(string, interface{})) {
+	c.evictionHook = hook
+}
+
 func (c *LRUCache) Set(key string, value interface{}) error {
 	el, ok := c.index[key]
 	if ok {
@@ -36,7 +41,7 @@ func (c *LRUCache) Set(key string, value interface{}) error {
 			// Cache is full so remove an existing key/value
 			el := c.lru.Front()
 			kv := el.Value.(*keyValue)
-			delete(c.index, kv.key)
+			c.delete(kv)
 			// Reuse list element
 			kv.key = key
 			kv.value = value
@@ -68,6 +73,13 @@ func (c *LRUCache) Delete(key string) error {
 		return nil
 	}
 	kv := c.lru.Remove(el).(*keyValue)
-	delete(c.index, kv.key)
+	c.delete(kv)
 	return nil
+}
+
+func (c *LRUCache) delete(kv *keyValue) {
+	if c.evictionHook != nil {
+		c.evictionHook(kv.key, kv.value)
+	}
+	delete(c.index, kv.key)
 }
