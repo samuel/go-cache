@@ -68,3 +68,29 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("didn't expire key3")
 	}
 }
+
+func TestLRUCacheEvictionHook(t *testing.T) {
+	callCount := 0
+
+	cache := NewLRUCache(2)
+	cache.SetEvictionHook(func(key string, value interface{}) {
+		callCount++
+	})
+	cache.Set("key1", "v1")
+	cache.Set("key2", "v2")
+	cache.Set("key3", "v3")
+	if callCount != 1 {
+		t.Fatalf("Eviction hook should be called")
+	}
+}
+
+func TestLRUCacheKeys(t *testing.T) {
+	cache := NewLRUCache(2)
+	cache.Set("key1", "v1")
+	cache.Set("key2", "v2")
+
+	keys := cache.Keys()
+	if length := len(keys); length != 2 {
+		t.Fatalf("keys length should be 2 was %v", length)
+	}
+}
