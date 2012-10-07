@@ -83,3 +83,14 @@ func TestLRUCacheEvictionHook(t *testing.T) {
 		t.Fatalf("Eviction hook should be called")
 	}
 }
+
+func TestLRUCacheKeys(t *testing.T) {
+	cache := NewLRUCache(2)
+	cache.Set("key1", "v1")
+	cache.Set("key2", "v2")
+
+	keys := cache.Keys()
+	if length := len(keys); length != 2 {
+		t.Fatalf("keys length should be 2 was %v", length)
+	}
+}

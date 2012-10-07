@@ -83,3 +83,11 @@ func (c *LRUCache) delete(kv *keyValue) {
 	}
 	delete(c.index, kv.key)
 }
+
+func (c *LRUCache) Keys() []string {
+	keys := make([]string, 0, len(c.index))
+	for key, _ := range c.index {
+		keys = append(keys, key)
+	}
+	return keys
+}
