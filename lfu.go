@@ -8,6 +8,7 @@ type LFUCache struct {
 	maxItems int
 	lfu      *list.List
 	index    map[string]*list.Element
+	evictionHook func (string, interface{})
 }
 
 type lfuNode struct {
@@ -30,6 +31,10 @@ func NewLFUCache(maxItems int) *LFUCache {
 	firstNode := &lfuNode{1, list.New()}
 	c.lfu.PushFront(firstNode)
 	return c
+}
+
+func (c *LFUCache) SetEvictionHook(hook func(string, interface{})) {
+	c.evictionHook = hook
 }
 
 func (c *LFUCache) Set(key string, value interface{}) error {
@@ -61,7 +66,7 @@ func (c *LFUCache) Delete(key string) error {
 	el, ok := c.index[key]
 	if ok {
 		c.removeElement(el)
-		delete(c.index, key)
+		c.delete(el.Value.(*lfuItem))
 	}
 	return nil
 }
@@ -110,8 +115,15 @@ func (c *LFUCache) expireOneItem() {
 		if el != nil {
 			item := el.Value.(*lfuItem)
 			lfuNode.items.Remove(el)
-			delete(c.index, item.key)
+			c.delete(item)
 			return
 		}
 	}
+}
+
+func (c *LFUCache) delete(item *lfuItem) {
+	if c.evictionHook != nil {
+		c.evictionHook(item.key, item.value)
+	}
+	delete(c.index, item.key)
 }
