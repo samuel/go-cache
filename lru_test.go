@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"math/rand"
+	"strconv"
 	"testing"
 )
 
@@ -26,8 +28,8 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
-		t.Fatal("index or lry length should be 2")
+	if len(cache.index) != 2 || cache.lruLen() != 2 {
+		t.Fatal("index or lru length should be 2")
 	}
 
 	// Make sure set updates lru
@@ -36,8 +38,8 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
-		t.Fatal("index or lry length should be 2")
+	if len(cache.index) != 2 || cache.lruLen() != 2 {
+		t.Fatal("index or lru length should be 2")
 	}
 
 	if val, err := cache.Get("key1"); err != nil {
@@ -58,8 +60,8 @@ func TestLRUCacheExpiration(t *testing.T) {
 		t.Fatal("cache.Set returned err")
 	}
 
-	if len(cache.index) != 2 || cache.lru.Len() != 2 {
-		t.Fatal("index or lry length should be 2")
+	if len(cache.index) != 2 || cache.lruLen() != 2 {
+		t.Fatal("index or lru length should be 2")
 	}
 
 	if val, err := cache.Get("key3"); err != nil {
@@ -93,4 +95,45 @@ func TestLRUCacheKeys(t *testing.T) {
 	if length := len(keys); length != 2 {
 		t.Fatalf("keys length should be 2 was %v", length)
 	}
+}
+
+func BenchmarkLRUCacheGet10(b *testing.B) {
+	benchmarkLRUCacheGet(b, 10)
+}
+
+func BenchmarkLRUCacheGet100(b *testing.B) {
+	benchmarkLRUCacheGet(b, 1000)
+}
+
+func BenchmarkLRUCacheGet1000(b *testing.B) {
+	benchmarkLRUCacheGet(b, 1000)
+}
+
+func BenchmarkLRUCacheGet10000(b *testing.B) {
+	benchmarkLRUCacheGet(b, 10000)
+}
+
+func BenchmarkLRUCacheGet100000(b *testing.B) {
+	benchmarkLRUCacheGet(b, 1000000)
+}
+
+func BenchmarkLRUCacheGet1000000(b *testing.B) {
+	benchmarkLRUCacheGet(b, 1000000)
+}
+
+func benchmarkLRUCacheGet(b *testing.B, n int) {
+	cache := NewLRUCache(n)
+	keys := make([]string, n)
+	for i := 0; i < n; i++ {
+		k := strconv.Itoa(i)
+		keys[i] = k
+		cache.Set(k, i)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		k := keys[rand.Intn(n)]
+		cache.Get(k)
+	}
+	b.SetBytes(1)
 }

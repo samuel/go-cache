@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"math/rand"
+	"strconv"
 	"testing"
 )
 
@@ -82,4 +84,44 @@ func TestLFUCacheEvictionHook(t *testing.T) {
 	if callCount != 1 {
 		t.Fatalf("Eviction hook should be called")
 	}
+}
+
+func BenchmarkLFUCacheGet10(b *testing.B) {
+	benchmarkLFUCacheGet(b, 10)
+}
+
+func BenchmarkLFUCacheGet100(b *testing.B) {
+	benchmarkLFUCacheGet(b, 1000)
+}
+
+func BenchmarkLFUCacheGet1000(b *testing.B) {
+	benchmarkLFUCacheGet(b, 1000)
+}
+
+func BenchmarkLFUCacheGet10000(b *testing.B) {
+	benchmarkLFUCacheGet(b, 10000)
+}
+
+func BenchmarkLFUCacheGet100000(b *testing.B) {
+	benchmarkLFUCacheGet(b, 1000000)
+}
+
+func BenchmarkLFUCacheGet1000000(b *testing.B) {
+	benchmarkLFUCacheGet(b, 1000000)
+}
+
+func benchmarkLFUCacheGet(b *testing.B, n int) {
+	cache := NewLFUCache(n)
+	keys := make([]string, n)
+	for i := 0; i < n; i++ {
+		k := strconv.Itoa(i)
+		keys[i] = k
+		cache.Set(k, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		k := keys[rand.Intn(n)]
+		cache.Get(k)
+	}
+	b.SetBytes(1)
 }
