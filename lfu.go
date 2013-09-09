@@ -2,13 +2,15 @@ package cache
 
 import (
 	"container/list"
+	"sync"
 )
 
 type LFUCache struct {
-	maxItems int
-	lfu      *list.List
-	index    map[string]*list.Element
-	evictionHook func (string, interface{})
+	maxItems     int
+	lfu          *list.List
+	index        map[string]*list.Element
+	evictionHook func(string, interface{})
+	mu           sync.Mutex
 }
 
 type lfuNode struct {
@@ -34,10 +36,14 @@ func NewLFUCache(maxItems int) *LFUCache {
 }
 
 func (c *LFUCache) SetEvictionHook(hook func(string, interface{})) {
+	c.mu.Lock()
 	c.evictionHook = hook
+	c.mu.Unlock()
 }
 
 func (c *LFUCache) Set(key string, value interface{}) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if ok {
 		el.Value.(*lfuItem).value = value
@@ -54,6 +60,8 @@ func (c *LFUCache) Set(key string, value interface{}) error {
 }
 
 func (c *LFUCache) Get(key string) (interface{}, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if ok {
 		c.incrLfu(el)
@@ -63,6 +71,8 @@ func (c *LFUCache) Get(key string) (interface{}, error) {
 }
 
 func (c *LFUCache) Delete(key string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if ok {
 		c.removeElement(el)

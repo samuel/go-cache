@@ -2,13 +2,15 @@ package cache
 
 import (
 	"container/list"
+	"sync"
 )
 
 type LRUCache struct {
-	maxItems int
-	lru      *list.List
-	index    map[string]*list.Element
-	evictionHook func (string, interface{})
+	maxItems     int
+	lru          *list.List
+	index        map[string]*list.Element
+	evictionHook func(string, interface{})
+	mu           sync.Mutex
 }
 
 type keyValue struct {
@@ -26,10 +28,14 @@ func NewLRUCache(maxItems int) *LRUCache {
 }
 
 func (c *LRUCache) SetEvictionHook(hook func(string, interface{})) {
+	c.mu.Lock()
 	c.evictionHook = hook
+	c.mu.Unlock()
 }
 
 func (c *LRUCache) Set(key string, value interface{}) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if ok {
 		// Element exists so just move it to the back and update value
@@ -58,6 +64,8 @@ func (c *LRUCache) Set(key string, value interface{}) error {
 }
 
 func (c *LRUCache) Get(key string) (interface{}, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if !ok {
 		return nil, nil
@@ -68,6 +76,8 @@ func (c *LRUCache) Get(key string) (interface{}, error) {
 }
 
 func (c *LRUCache) Delete(key string) error {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	el, ok := c.index[key]
 	if !ok {
 		return nil
@@ -85,6 +95,8 @@ func (c *LRUCache) delete(kv *keyValue) {
 }
 
 func (c *LRUCache) Keys() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	keys := make([]string, 0, len(c.index))
 	for key, _ := range c.index {
 		keys = append(keys, key)
