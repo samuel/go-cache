@@ -1,7 +1,7 @@
 In memory cache package for Go
 ==============================
 
-Documentation: <http://go.pkgdoc.org/github.com/samuel/go-cache>
+Documentation: <http://godoc.org/github.com/samuel/go-cache/cache>
 
 Algorithms
 ----------

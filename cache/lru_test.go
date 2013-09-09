@@ -73,7 +73,7 @@ func TestLRUCacheEvictionHook(t *testing.T) {
 	callCount := 0
 
 	cache := NewLRUCache(2)
-	cache.SetEvictionHook(func(key string, value interface{}) {
+	cache.SetEvictionHook(func(key, value interface{}) {
 		callCount++
 	})
 	cache.Set("key1", "v1")

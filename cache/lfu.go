@@ -8,8 +8,8 @@ import (
 type LFUCache struct {
 	maxItems     int
 	lfu          *list.List
-	index        map[string]*list.Element
-	evictionHook func(string, interface{})
+	index        map[interface{}]*list.Element
+	evictionHook func(interface{}, interface{})
 	mu           sync.Mutex
 }
 
@@ -19,29 +19,28 @@ type lfuNode struct {
 }
 
 type lfuItem struct {
-	parent *list.Element
-	key    string
-	value  interface{}
+	parent     *list.Element
+	key, value interface{}
 }
 
 func NewLFUCache(maxItems int) *LFUCache {
 	c := &LFUCache{
 		maxItems: maxItems,
 		lfu:      list.New(),
-		index:    make(map[string]*list.Element, maxItems),
+		index:    make(map[interface{}]*list.Element, maxItems),
 	}
 	firstNode := &lfuNode{1, list.New()}
 	c.lfu.PushFront(firstNode)
 	return c
 }
 
-func (c *LFUCache) SetEvictionHook(hook func(string, interface{})) {
+func (c *LFUCache) SetEvictionHook(hook func(key, value interface{})) {
 	c.mu.Lock()
 	c.evictionHook = hook
 	c.mu.Unlock()
 }
 
-func (c *LFUCache) Set(key string, value interface{}) error {
+func (c *LFUCache) Set(key, value interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	el, ok := c.index[key]
@@ -59,7 +58,7 @@ func (c *LFUCache) Set(key string, value interface{}) error {
 	return nil
 }
 
-func (c *LFUCache) Get(key string) (interface{}, error) {
+func (c *LFUCache) Get(key interface{}) (interface{}, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	el, ok := c.index[key]
@@ -70,7 +69,7 @@ func (c *LFUCache) Get(key string) (interface{}, error) {
 	return nil, nil
 }
 
-func (c *LFUCache) Delete(key string) error {
+func (c *LFUCache) Delete(key interface{}) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	el, ok := c.index[key]
